@@ -1,35 +1,21 @@
 import { UnloadedModuleProps } from "@agility/nextjs";
 import { getContentItem } from "lib/cms/getContentItem";
 import HeroBannerGallery from "./HeroBannerGallery";
+import { AgilityPic, ImageField, URLField } from "@agility/nextjs";
+import Link from "next/link";
 
 interface HeroBannerFields {
   title: string;
   subtitle?: string;
   overlayOpacity?: number;
   textAlignment?: "left" | "center" | "right";
-  backgroundImage?: {
-    url: string;
-  };
-  ctaLink?: {
-    href: string;
-    text: string;
-    target?: string;
-  };
+  backgroundImage?: ImageField;
+  ctaLink?: URLField;
   imageGallery?: {
     galleryID: number;
     name: string;
     description?: string;
-    media: Array<{
-      mediaID: number;
-      url: string;
-      fileName: string;
-      size: number;
-      modifiedOn: string;
-      metaData: {
-        pixelHeight: string;
-        pixelWidth: string;
-      };
-    }>;
+    media: any[];
     count: number;
   };
 }
@@ -40,6 +26,38 @@ const HeroBanner = async ({ module, languageCode }: UnloadedModuleProps) => {
     languageCode,
   });
 
+  // function to check whether or not the url is absolute
+  const isUrlAbsolute = (url: string) => url.indexOf("://") > 0 || url.indexOf("//") === 0;
+
+  // function to generate proper link
+  const generateLink = (url: string, target: string, text: string) => {
+    // if relative link, use next/link
+    if (isUrlAbsolute(url) === false) {
+      return (
+        <Link
+          data-agility-field="ctaLink"
+          href={url}
+          title={text}
+          target={target}
+          className="inline-block mt-8 md:mt-8 px-8 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white bg-primary-500 hover:bg-primary-700 dark:bg-primary-400 dark:hover:bg-primary-600 focus:outline-hidden focus:border-primary-700 focus:shadow-outline-indigo active:bg-indigo-700 transition ease-in-out duration-150">
+          {text}
+        </Link>
+      );
+    } else {
+      // else use anchor tag
+      return (
+        <a
+          data-agility-field="ctaLink"
+          href={url}
+          title={text}
+          target={target}
+          className="inline-block mt-8 md:mt-8 px-8 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white bg-primary-500 hover:bg-primary-700 dark:bg-primary-400 dark:hover:bg-primary-600 focus:outline-hidden focus:border-primary-700 focus:shadow-outline-indigo active:bg-indigo-700 transition ease-in-out duration-150">
+          {text}
+        </a>
+      );
+    }
+  };
+
   // Alignment classes
   const alignmentClass = fields.textAlignment === "center" ? "text-center items-center" : fields.textAlignment === "right" ? "text-right items-end" : "text-left items-start";
   const ctaAlignmentClass = fields.textAlignment === "center" ? "justify-center" : fields.textAlignment === "right" ? "justify-end" : "justify-start";
@@ -48,15 +66,22 @@ const HeroBanner = async ({ module, languageCode }: UnloadedModuleProps) => {
   const isRightAligned = fields.textAlignment === "right";
 
   return (
-    <section
-      id={`${contentID}`}
-      className="relative flex items-center justify-center min-h-[80vh] md:min-h-[60vh] bg-white dark:bg-gray-900"
-      data-agility-component={contentID}
-      style={{
-        backgroundImage: fields.backgroundImage?.url ? `url(${fields.backgroundImage.url})` : undefined,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}>
+    <section id={`${contentID}`} className="relative flex items-center justify-center min-h-[80vh] md:min-h-[60vh] overflow-hidden" data-agility-component={contentID}>
+      {fields.backgroundImage && (
+        <div className="absolute inset-0 z-0">
+          <AgilityPic
+            image={fields.backgroundImage}
+            className="w-full h-full object-cover"
+            fallbackWidth={1200}
+            priority={true}
+            sources={[
+              { media: "(min-width: 1200px)", width: 1920 },
+              { media: "(min-width: 640px)", width: 1200 },
+              { media: "(max-width: 639px)", width: 640 },
+            ]}
+          />
+        </div>
+      )}
       {/* Overlay */}
       <div className="absolute inset-0 bg-black/40" />
 
@@ -80,16 +105,7 @@ const HeroBanner = async ({ module, languageCode }: UnloadedModuleProps) => {
                   {fields.subtitle}
                 </p>
               )}
-              {fields.ctaLink && (
-                <div className={`w-full flex mt-8 ${ctaAlignmentClass}`}>
-                  <a
-                    href={fields.ctaLink.href}
-                    target={fields.ctaLink.target}
-                    className="px-8 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white bg-primary-500 hover:bg-primary-700 dark:bg-primary-400 dark:hover:bg-primary-600 focus:outline-hidden focus:border-primary-700 focus:shadow-outline-indigo active:bg-indigo-700 transition ease-in-out duration-150">
-                    {fields.ctaLink.text ?? "Learn More"}
-                  </a>
-                </div>
-              )}
+              {fields.ctaLink && <div className={`w-full flex mt-8 ${ctaAlignmentClass}`}>{generateLink(fields.ctaLink.href, fields.ctaLink.target, fields.ctaLink.text ?? "Learn More")}</div>}
             </div>
           </>
         ) : (
@@ -107,16 +123,7 @@ const HeroBanner = async ({ module, languageCode }: UnloadedModuleProps) => {
                   {fields.subtitle}
                 </p>
               )}
-              {fields.ctaLink && (
-                <div className={`w-full flex mt-8 ${ctaAlignmentClass}`}>
-                  <a
-                    href={fields.ctaLink.href}
-                    target={fields.ctaLink.target}
-                    className="px-8 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white bg-primary-500 hover:bg-primary-700 dark:bg-primary-400 dark:hover:bg-primary-600 focus:outline-hidden focus:border-primary-700 focus:shadow-outline-indigo active:bg-indigo-700 transition ease-in-out duration-150">
-                    {fields.ctaLink.text ?? "Learn More"}
-                  </a>
-                </div>
-              )}
+              {fields.ctaLink && <div className={`w-full flex mt-8 ${ctaAlignmentClass}`}>{generateLink(fields.ctaLink.href, fields.ctaLink.target, fields.ctaLink.text ?? "Learn More")}</div>}
             </div>
             <div className="hidden md:block">{fields.imageGallery?.media && fields.imageGallery.count > 0 ? <HeroBannerGallery images={fields.imageGallery.media} /> : null}</div>
           </>

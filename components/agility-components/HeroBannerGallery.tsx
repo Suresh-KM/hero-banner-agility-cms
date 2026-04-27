@@ -1,8 +1,8 @@
 "use client";
 import { useState } from "react";
-import Image from "next/image";
+import { AgilityPic, ImageField } from "@agility/nextjs";
 
-interface GalleryImage {
+interface GalleryImage extends ImageField {
   mediaID: number;
   url: string;
   fileName: string;
@@ -22,7 +22,16 @@ export default function HeroBannerGallery({ images }: { images: GalleryImage[] }
   return (
     <div className="relative w-full max-w-md mx-auto">
       <div className="aspect-square rounded-full overflow-hidden shadow-lg bg-gray-200 dark:bg-gray-800 relative flex items-center justify-center">
-        <Image src={images[current].url} alt={images[current].fileName} fill className="object-cover" sizes="(max-width: 768px) 100vw, 400px" priority />
+        <AgilityPic
+          image={images[current]}
+          className="absolute inset-0 w-full h-full object-cover"
+          fallbackWidth={800}
+          priority={current === 0}
+          sources={[
+            { media: "(min-width: 768px)", width: 400 },
+            { media: "(max-width: 767px)", width: 400 },
+          ]}
+        />
       </div>
       {/* Dots */}
       {images.length > 1 && (
